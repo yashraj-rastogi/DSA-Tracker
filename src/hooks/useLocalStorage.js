@@ -10,6 +10,8 @@ const getInitialState = (userId) => {
             // Migrate old data structure if needed
             if (!parsed.dailyLectures) parsed.dailyLectures = {};
             if (!parsed.dailyQuestions) parsed.dailyQuestions = {};
+            if (!parsed.dailyNotes) parsed.dailyNotes = {};
+            if (!parsed.dailyTodos) parsed.dailyTodos = {};
             return parsed;
         } catch (e) {
             console.error('Error parsing stored data:', e);
@@ -136,6 +138,50 @@ export const useLocalStorage = (userId = null) => {
             activityDates: [],
             dailyLectures: {},
             dailyQuestions: {},
+            dailyNotes: {},     // { "2026-01-30": "My summary..." }
+            dailyTodos: {},     // { "2026-01-30": [{ id: 1706600, text: "Revise Graph", completed: false }] }
+        });
+    };
+
+    const updateDailyNote = (dateStr, note) => {
+        setData(prev => ({
+            ...prev,
+            dailyNotes: { ...prev.dailyNotes, [dateStr]: note }
+        }));
+    };
+
+    const addDailyTodo = (dateStr, text) => {
+        const newTodo = { id: Date.now(), text, completed: false };
+        setData(prev => {
+            const currentTodos = prev.dailyTodos[dateStr] || [];
+            return {
+                ...prev,
+                dailyTodos: { ...prev.dailyTodos, [dateStr]: [...currentTodos, newTodo] }
+            };
+        });
+    };
+
+    const toggleDailyTodo = (dateStr, todoId) => {
+        setData(prev => {
+            const currentTodos = prev.dailyTodos[dateStr] || [];
+            const updatedTodos = currentTodos.map(todo =>
+                todo.id === todoId ? { ...todo, completed: !todo.completed } : todo
+            );
+            return {
+                ...prev,
+                dailyTodos: { ...prev.dailyTodos, [dateStr]: updatedTodos }
+            };
+        });
+    };
+
+    const deleteDailyTodo = (dateStr, todoId) => {
+        setData(prev => {
+            const currentTodos = prev.dailyTodos[dateStr] || [];
+            const updatedTodos = currentTodos.filter(todo => todo.id !== todoId);
+            return {
+                ...prev,
+                dailyTodos: { ...prev.dailyTodos, [dateStr]: updatedTodos }
+            };
         });
     };
 
@@ -147,7 +193,12 @@ export const useLocalStorage = (userId = null) => {
         getDSAStatus,
         getSolvedCount,
         getWeeklyData,
+        getWeeklyData,
         resetData,
+        updateDailyNote,
+        addDailyTodo,
+        toggleDailyTodo,
+        deleteDailyTodo,
     };
 };
 

@@ -15,6 +15,7 @@ import {
 import Dashboard from './components/Dashboard';
 import LectureTracker from './components/LectureTracker';
 import DSATracker from './components/DSATracker';
+import About from './components/About';
 import AuthPage from './components/AuthPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import useLocalStorage from './hooks/useLocalStorage';
@@ -47,7 +48,11 @@ function AppContent() {
     getDSAStatus,
     getSolvedCount,
     getWeeklyData,
-    resetData
+    resetData,
+    updateDailyNote,
+    addDailyTodo,
+    toggleDailyTodo,
+    deleteDailyTodo,
   } = useLocalStorage(user?.id);
 
   // Calculate total questions from nested structure
@@ -61,6 +66,7 @@ function AppContent() {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'lectures', label: 'Lectures', icon: BookOpen },
     { id: 'dsa', label: 'DSA Sheet', icon: Code2 },
+    { id: 'about', label: 'About', icon: User },
   ];
 
   const handleReset = () => {
@@ -228,6 +234,10 @@ function AppContent() {
             getWeeklyData={getWeeklyData}
             totalQuestions={totalQuestions}
             userName={user?.name}
+            updateDailyNote={updateDailyNote}
+            addDailyTodo={addDailyTodo}
+            toggleDailyTodo={toggleDailyTodo}
+            deleteDailyTodo={deleteDailyTodo}
           />
         )}
 
@@ -245,6 +255,8 @@ function AppContent() {
             getSolvedCount={getSolvedCount}
           />
         )}
+
+        {activeTab === 'about' && <About />}
       </main>
 
       {/* Mobile Bottom Navigation */}

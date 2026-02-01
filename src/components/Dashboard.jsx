@@ -12,16 +12,32 @@ import {
     ChevronRight,
     ArrowRight
 } from 'lucide-react';
+import DayDetails from './DayDetails';
+import NoteHistory from './NoteHistory';
 import lectureData from '../data/lectureData';
 import { useMemo, useState } from 'react';
+import { PenTool, History as HistoryIcon, PlusCircle } from 'lucide-react';
 
-const Dashboard = ({ data, setStartDate, getSolvedCount, getWeeklyData, totalQuestions, userName }) => {
+const Dashboard = ({
+    data,
+    setStartDate,
+    getSolvedCount,
+    getWeeklyData,
+    totalQuestions,
+    userName,
+    updateDailyNote,
+    addDailyTodo,
+    toggleDailyTodo,
+    deleteDailyTodo
+}) => {
     const totalLectures = lectureData.length;
     const completedLectures = data.completedLectures.length;
     const solvedQuestions = getSolvedCount();
 
     // Calendar state
     const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [selectedDate, setSelectedDate] = useState(null);
+    const [historyOpen, setHistoryOpen] = useState(false);
 
     // Calculate days info
     const daysInfo = useMemo(() => {
@@ -91,7 +107,8 @@ const Dashboard = ({ data, setStartDate, getSolvedCount, getWeeklyData, totalQue
         // Add all days of the month
         for (let day = 1; day <= lastDay.getDate(); day++) {
             const date = new Date(year, month, day);
-            const dateStr = date.toISOString().split('T')[0];
+            // Use local date string construction to avoid timezone shifts caused by toISOString() check
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const isToday = date.getTime() === today.getTime();
             const isPast = date < today;
             const isActive = data.activityDates.includes(dateStr);
@@ -350,10 +367,12 @@ const Dashboard = ({ data, setStartDate, getSolvedCount, getWeeklyData, totalQue
                         {calendarData.flat().map((day, index) => (
                             <div
                                 key={index}
-                                className={`calendar-day ${day.empty ? 'empty' : ''} ${day.isToday ? 'today' : ''} ${day.isActive ? 'active' : ''} ${day.isPast && !day.isActive ? 'missed' : ''}`}
+                                onClick={() => !day.empty && setSelectedDate(day.dateStr)}
+                                className={`calendar-day ${day.empty ? 'empty' : ''} ${day.isToday ? 'today' : ''} ${day.isActive ? 'active' : ''} ${day.isPast && !day.isActive ? 'missed' : ''} ${!day.empty ? 'cursor-pointer hover:bg-slate-700/50 transition-colors' : ''}`}
                                 title={day.dateStr ? `${day.dateStr} - ${day.isActive ? 'Active' : 'Inactive'}` : ''}
                             >
                                 {!day.empty && day.day}
+                                {/* Brief indicator if day has notes/todos? Maybe later. */}
                             </div>
                         ))}
                     </div>
@@ -447,6 +466,46 @@ const Dashboard = ({ data, setStartDate, getSolvedCount, getWeeklyData, totalQue
                 </div>
             </div>
 
+            {/* Planner & Quick Access Section */}
+            <div className="planner-section glass-card mb-6 p-6 h-20">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-2">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-xl bg-orange-500/20 text-orange-400">
+                            <PenTool size={28} />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold">Daily Planner & Notes</h3>
+                            <p className="text-slate-400 text-sm">Manage your tasks and keep track of your journey</p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 w-full md:w-auto">
+                        <button
+                            onClick={() => {
+                                // Open today
+                                const today = new Date();
+                                const y = today.getFullYear();
+                                const m = String(today.getMonth() + 1).padStart(2, '0');
+                                const d = String(today.getDate()).padStart(2, '0');
+                                setSelectedDate(`${y}-${m}-${d}`);
+                            }}
+                            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium text-sm"
+                        >
+                            <PlusCircle size={18} />
+                            Open Today's Plan
+                        </button>
+
+                        <button
+                            onClick={() => setHistoryOpen(true)}
+                            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg transition-colors font-medium text-sm"
+                        >
+                            <HistoryIcon size={18} />
+                            View History
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             {/* Goal & Pacing Section */}
             {daysInfo ? (
                 <div className="goal-section glass-card">
@@ -533,6 +592,32 @@ const Dashboard = ({ data, setStartDate, getSolvedCount, getWeeklyData, totalQue
                         />
                     </div>
                 </div>
+            )}
+
+            {/* Daily Details Modal */}
+            {selectedDate && (
+                <DayDetails
+                    dateStr={selectedDate}
+                    onClose={() => setSelectedDate(null)}
+                    note={data.dailyNotes?.[selectedDate]}
+                    todos={data.dailyTodos?.[selectedDate]}
+                    onUpdateNote={updateDailyNote}
+                    onAddTodo={addDailyTodo}
+                    onToggleTodo={toggleDailyTodo}
+                    onDeleteTodo={deleteDailyTodo}
+                />
+            )}
+
+            {/* History Modal */}
+            {historyOpen && (
+                <NoteHistory
+                    data={data}
+                    onClose={() => setHistoryOpen(false)}
+                    onSelectDate={(date) => {
+                        setSelectedDate(date);
+                        setHistoryOpen(false);
+                    }}
+                />
             )}
         </div>
     );
