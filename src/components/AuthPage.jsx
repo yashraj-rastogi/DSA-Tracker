@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles, Mail, Lock, User, ArrowRight, Check } from 'lucide-react';
+import { Sparkles, Mail, Lock, User, ArrowRight, Check, Chrome, UserCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const AuthPage = () => {
@@ -10,7 +10,7 @@ const AuthPage = () => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const { login, signup } = useAuth();
+    const { login, signup, loginWithGoogle, continueAsGuest } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -30,14 +30,11 @@ const AuthPage = () => {
             return;
         }
 
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-
         let result;
         if (isLogin) {
-            result = login(email, password);
+            result = await login(email, password);
         } else {
-            result = signup(name, email, password);
+            result = await signup(name, email, password);
         }
 
         if (!result.success) {
@@ -45,6 +42,20 @@ const AuthPage = () => {
         }
 
         setIsLoading(false);
+    };
+
+    const handleGoogleLogin = async () => {
+        setError('');
+        setIsLoading(true);
+        const result = await loginWithGoogle();
+        if (!result.success) {
+            setError(result.error);
+        }
+        setIsLoading(false);
+    };
+
+    const handleGuestMode = () => {
+        continueAsGuest();
     };
 
     const features = [
@@ -106,6 +117,33 @@ const AuthPage = () => {
                             </p>
                         </div>
 
+                        {/* Social Login Buttons */}
+                        <div className="auth-social-buttons">
+                            <button
+                                type="button"
+                                onClick={handleGoogleLogin}
+                                disabled={isLoading}
+                                className="auth-social-btn auth-google-btn"
+                            >
+                                <Chrome className="w-5 h-5" />
+                                <span>Continue with Google</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleGuestMode}
+                                disabled={isLoading}
+                                className="auth-social-btn auth-guest-btn"
+                            >
+                                <UserCircle className="w-5 h-5" />
+                                <span>Continue as Guest</span>
+                            </button>
+                        </div>
+
+                        <div className="auth-divider">
+                            <span>or continue with email</span>
+                        </div>
+
                         <form onSubmit={handleSubmit} className="auth-form">
                             {!isLogin && (
                                 <div className="auth-input-group">
@@ -162,8 +200,8 @@ const AuthPage = () => {
                                 className="auth-submit-btn"
                                 disabled={isLoading}
                             >
-                                <span>{isLogin ? 'Sign In' : 'Create Account'}</span>
-                                <ArrowRight className="w-5 h-5" />
+                                <span>{isLoading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}</span>
+                                {!isLoading && <ArrowRight className="w-5 h-5" />}
                             </button>
                         </form>
 

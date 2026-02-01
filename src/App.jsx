@@ -18,12 +18,12 @@ import DSATracker from './components/DSATracker';
 import About from './components/About';
 import AuthPage from './components/AuthPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import useLocalStorage from './hooks/useLocalStorage';
+import useUserData from './hooks/useUserData';
 import dsaQuestions from './data/dsaQuestions';
 import './index.css';
 
 function AppContent() {
-  const { user, isAuthenticated, logout, loading } = useAuth();
+  const { user, isAuthenticated, isGuest, logout, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState(() => {
@@ -42,6 +42,8 @@ function AppContent() {
 
   const {
     data,
+    loading: dataLoading,
+    syncing,
     setStartDate,
     toggleLecture,
     updateDSAStatus,
@@ -53,7 +55,7 @@ function AppContent() {
     addDailyTodo,
     toggleDailyTodo,
     deleteDailyTodo,
-  } = useLocalStorage(user?.id);
+  } = useUserData();
 
   // Calculate total questions from nested structure
   const totalQuestions = dsaQuestions?.content?.reduce((total, topic) => {
@@ -81,7 +83,7 @@ function AppContent() {
     }
   };
 
-  if (loading) {
+  if (authLoading || dataLoading) {
     return (
       <div className="loading-screen">
         <div className="loading-spinner"></div>
@@ -130,8 +132,8 @@ function AppContent() {
                 <User className="w-6 h-6" />
               </div>
               <div className="user-details">
-                <span className="user-name">{user?.name}</span>
-                <span className="user-email">{user?.email}</span>
+                <span className="user-name">{user?.name || 'Guest'}</span>
+                <span className="user-email">{user?.email || 'Local data only'}</span>
               </div>
             </div>
 
@@ -198,7 +200,7 @@ function AppContent() {
         <div className="nav-actions">
           <div className="user-badge">
             <User className="w-4 h-4" />
-            <span className="user-name-badge">{user?.name?.split(' ')[0]}</span>
+            <span className="user-name-badge">{user?.name?.split(' ')[0] || 'Guest'}</span>
           </div>
           <button
             onClick={toggleTheme}
